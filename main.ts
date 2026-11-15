@@ -44,6 +44,21 @@ function fail(message: string): never {
   process.exit(1);
 }
 
+/** Print how to run the radar and exit. */
+function printUsage(): never {
+  process.stdout.write(
+    'token radar: rank pre-token protocols by implied value from a DefiLlama snapshot\n' +
+      'usage: node main.ts [--input <snapshot.json|directory>] [--output <directory>]\n' +
+      '  --input   snapshot file or the directory holding snapshot.json (default /input)\n' +
+      '  --output  where board.json, data.js, dashboard/, screenshots/ and dossier.json go\n' +
+      '            (default /output, or $MAKEFUN_OUTPUT_DIR when set)\n' +
+      '  --help    print this and exit\n',
+  );
+  process.exit(0);
+}
+
+if (process.argv.includes('--help') || process.argv.includes('-h')) printUsage();
+
 const inputArg = flag('input', '/input');
 const inputFile = inputArg.endsWith('.json') ? inputArg : join(inputArg, 'snapshot.json');
 if (!existsSync(inputFile)) {
@@ -52,6 +67,9 @@ if (!existsSync(inputFile)) {
 const out = flag('output', process.env.MAKEFUN_OUTPUT_DIR ?? '/output');
 
 const snapshot = parseSnapshot(readFileSync(inputFile, 'utf8'));
+if (snapshot.protocols.length === 0) {
+  fail('the snapshot holds no protocols: nothing to score');
+}
 const { board, radar } = buildRadar(snapshot);
 const issue = boardIssue(board, snapshot);
 if (issue !== null) fail(`the model wrote a board the gate refuses: ${issue}`);
